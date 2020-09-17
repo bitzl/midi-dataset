@@ -1,4 +1,4 @@
-use midly::{EventKind, MidiMessage, Smf};
+use midly::{EventKind, MetaMessage, MidiMessage, Smf};
 use std::collections::BTreeMap;
 use std::fs;
 
@@ -13,6 +13,21 @@ fn main() {
 
     let data = fs::read("bwv542.mid").unwrap();
     let smf = Smf::parse(&data).unwrap();
+
+    // Determine tempo to calculate tempo correction
+    for event in smf.tracks.iter().flat_map(|track| track.iter()) {
+        match event.kind {
+            EventKind::Meta(m) => match m {
+                MetaMessage::Tempo(t) => {
+                    let s = t.as_int() as f64 / 1000_000.0;
+                    let bpm = 60_000_000.0 / (t.as_int() as f64);
+                    println!("Tempo: {} ({} seconds, {} bpm)", t.as_int(), s, bpm)
+                }
+                _ => {}
+            },
+            _ => {}
+        }
+    }
 
     // Fill B-Trees for note events
 
